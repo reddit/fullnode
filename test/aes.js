@@ -1,6 +1,7 @@
 var should = require('chai').should();
-var Hash = require('../../lib/hash');
-var AES = require('../../lib/expmt/aes');
+var Hash = require('../lib/hash');
+var AES = require('../lib/aes');
+var vectors = require('./vectors/aes');
 
 describe('AES', function() {
   var m128 = Hash.sha256(new Buffer('test1')).slice(0, 128 / 8);
@@ -78,6 +79,21 @@ describe('AES', function() {
       var a = [100, 0];
       var buf = AES.words2buf(a);
       buf.length.should.equal(8);
+    });
+
+  });
+
+  describe('vectors', function() {
+    
+    vectors.forEach(function(vector, i) {
+      it('should pass sjcl test vector ' + i, function() {
+        var keybuf = new Buffer(vector.key, 'hex');
+        var ptbuf = new Buffer(vector.pt, 'hex');
+        var ctbuf = new Buffer(vector.ct, 'hex');
+
+        AES.encrypt(ptbuf, keybuf).toString('hex').should.equal(ctbuf.toString('hex'));
+        AES.decrypt(ctbuf, keybuf).toString('hex').should.equal(ptbuf.toString('hex'));
+      });
     });
 
   });

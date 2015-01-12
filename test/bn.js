@@ -29,6 +29,67 @@ describe('BN', function() {
     bn.toString().should.equal((Math.pow(2, 26)).toString());
   });
 
+  it('should correctly square the number related to a bug in bn.js', function() {
+    /**
+     * These test vectors are related to this bn.js commit:
+     * https://github.com/indutny/bn.js/commit/3557d780b07ed0ed301e128f326f83c2226fb679
+     *
+     * More information:
+     * https://github.com/bitpay/bitcore/pull/894
+     * https://github.com/indutny/elliptic/issues/17
+     * https://github.com/indutny/elliptic/pull/18
+     * https://github.com/indutny/elliptic/pull/19
+     */
+    var p = BN._prime('k256').p;
+    var red = BN.red('k256');
+   
+    var n = new BN('9cd8cb48c3281596139f147c1364a3ede88d3f310fdb0eb98c924e599ca1b3c9', 16);
+    var expected = n.sqr().mod(p);
+    var actual = n.toRed(red).redSqr().fromRed();
+   
+    assert.equal(actual.toString(16), expected.toString(16));
+  });
+
+  it('should correctly square these numbers related to a bug in OpenSSL - CVE-2014-3570', function() {
+    /**
+     * Bitcoin developer Peter Wuile discovered a bug in OpenSSL in the course
+     * of developing libsecp256k. The OpenSSL security advisory is here:
+     *
+     * https://www.openssl.org/news/secadv_20150108.txt
+     *
+     * Greg Maxwell has a description of the bug and how it was found here:
+     *
+     * https://www.reddit.com/r/Bitcoin/comments/2rrxq7/on_why_010s_release_notes_say_we_have_reason_to/
+     * https://www.reddit.com/r/programming/comments/2rrc64/openssl_security_advisory_new_openssl_releases/
+     *
+     * The OpenSSL fix is here:
+     *
+     * https://github.com/openssl/openssl/commit/a7a44ba55cb4f884c6bc9ceac90072dea38e66d0
+     *
+     * This test uses the same big numbers that were problematic in OpenSSL.
+     * The check is to ensure that squaring a number and multiplying it by
+     * itself result in the same number. As an additional precaution, we check
+     * this multiplication normally as well as mod(p).
+     */
+    var p = BN._prime('k256').p;
+
+    var n = BN('80000000000000008000000000000001FFFFFFFFFFFFFFFE0000000000000000', 16);
+    var sqr = n.sqr();
+    var nn = n.mul(n);
+    nn.toString().should.equal(sqr.toString());
+    var sqr = n.sqr().mod(p);
+    var nn = n.mul(n).mod(p);
+    nn.toString().should.equal(sqr.toString());
+
+    var n = BN('80000000000000000000000080000001FFFFFFFE000000000000000000000000', 16);
+    var sqr = n.sqr();
+    var nn = n.mul(n);
+    nn.toString().should.equal(sqr.toString());
+    var sqr = n.sqr().mod(p);
+    var nn = n.mul(n).mod(p);
+    nn.toString().should.equal(sqr.toString());
+  });
+
   describe('#copy', function() {
     
     it('should copy 5', function() {

@@ -1,5 +1,6 @@
 var should = require('chai').should();
 var Hash = require('../lib/hash');
+var vectors = require('./vectors/hash');
 
 describe('Hash', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
@@ -138,6 +139,43 @@ describe('Hash', function() {
       Hash.sha512hmac(data, key).toString('hex').should.equal(hex);
     });
 
+  });
+
+  describe('vectors', function() {
+
+    vectors.sha1.forEach(function(vector, i) {
+      it('should pass sjcl sha1 test vector ' + i, function() {
+        var data = new Buffer(vector[0]);
+        var hashbuf = new Buffer(vector[1], 'hex');
+        Hash.sha1(data).toString('hex').should.equal(vector[1]);
+      });
+    });
+    
+    vectors.sha256.forEach(function(vector, i) {
+      it('should pass sjcl sha256 test vector ' + i, function() {
+        var data = new Buffer(vector[0]);
+        var hashbuf = new Buffer(vector[1], 'hex');
+        Hash.sha256(data).toString('hex').should.equal(vector[1]);
+      });
+    });
+    
+    vectors.sha512.forEach(function(vector, i) {
+      it('should pass sjcl sha512 test vector ' + i, function() {
+        var data = new Buffer(vector[0]);
+        var hashbuf = new Buffer(vector[1], 'hex');
+        Hash.sha512(data).toString('hex').should.equal(vector[1]);
+      });
+    });
+    
+    vectors.hmac.forEach(function(vector, i) {
+      it('should pass standard hmac test vector ' + i, function() {
+        var keybuf = new Buffer(vector.key, 'hex');
+        var databuf = new Buffer(vector.data, 'hex');
+        Hash.sha256hmac(databuf, keybuf).toString('hex').substr(0, vector.sha256hmac.length).should.equal(vector.sha256hmac);
+        Hash.sha512hmac(databuf, keybuf).toString('hex').substr(0, vector.sha512hmac.length).should.equal(vector.sha512hmac);
+      });
+    });
+    
   });
 
 });
